@@ -2,7 +2,8 @@ function image = MultiChannel(filenames, mode)
 %MULTICHANNEL Computes intensity of SAR channels and returns a multidimensional array containing these. Also does normalization if necessary 
 %   Input Arguments: filenames - A cell array of string with the filenames where the channel information
 %                                is read from. Must contain exactly two entries.
-%                    mode - A nu
+%                    mode - A number which should be 0 if no normalization is
+%                           necessary and anything else if normalization is wanted. 
 %   Output: A mxnx2 array containing the intensities in both channels,
 %   which are normalized to be zero mean and unit variance.
 

@@ -10,6 +10,6 @@ R = georefcells();
 % image = cell(numel(sourcefiles), 1);
 for i = 1:numel(sourcefiles)
     filenames = sourcefiles{i};
-    image = MultiChannel(filenames);
+    image = MultiChannel(filenames, 1);
     writeP(image, 128, R, filenames, i);
 end
