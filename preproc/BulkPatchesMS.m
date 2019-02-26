@@ -12,3 +12,29 @@ for i = 1:numel(sourcedirs)
     image = resample10m(bands, 1);
     writeP(image, 120, R, dummy_info, i);
 end
+
+function patch = writePa(cell, bs, R, sourcefile, batchnumber)
+
+					 
+    rows = size(cell,1);
+    cols = size(cell,2);
+    k = 0;
+    
+    rowBlocks = rows/bs;
+    colBlocks = cols/bs;
+    
+    for j = 1:rowBlocks 
+        for i = 1:colBlocks    
+            
+            k = k + 1;
+            patch = cell((j - 1)*bs + 1 : (j - 1)*bs + bs , (i - 1)*bs + 1 : (i - 1)*bs + bs, :);
+            patchR = R; 
+            patchR.RasterSize = R.RasterSize;
+            info = geotiffinfo(sourcefile{1});
+            filename = ['patch_' num2str(batchnumber) '_counter_' num2str(k) '.tif'];
+            geotiffwrite(filename, patch, patchR,  ...
+       'GeoKeyDirectoryTag', info.GeoTIFFTags.GeoKeyDirectoryTag);     
+   
+        end
+    end
+end

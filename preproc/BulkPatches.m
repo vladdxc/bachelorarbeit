@@ -11,5 +11,7 @@ R = georefcells();
 for i = 1:numel(sourcefiles)
     filenames = sourcefiles{i};
     image = MultiChannel(filenames, 1);
-    writeP(image, 128, R, filenames, i);
+    writePa(image, 120, R, filenames, i);
 end
+
+
