@@ -1,10 +1,12 @@
 import keras.backend as K
 import numpy as np
-from keras.layers import Lambda, Dense, Input
+from keras.layers import Lambda, Dense, Input, Flatten
 from keras.models import Model
 from keras.losses import mse
+from keras.utils import plot_model
 from import_patches import ImportPatches
 import glob
+
 
 path = "D:\patches_S1B_IW_GRDH_20180823\*.tif"
 fls = glob.glob(path)
@@ -25,13 +27,23 @@ def sampling(args):
 
     return z_mean + K.exp(0.5 * z_log_var) * epsilon
 
+def elbo_loss(args):
+
+    z_mean, z_log_var = args
+    kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
+    kl_loss = K.sum(kl_loss, axis=-1)
+    kl_loss *= -0.5
+
+    return K.mean(kl_loss)
+
 original_dim = 128*128*2
 input_shape = (128*128, 2)
 intermediate_dim = 512
 latent_dim = 2
 
 inputs = Input(shape=input_shape, name='encoder_input')
-x = Dense(intermediate_dim, activation='relu')(inputs)
+flattened = Flatten()(inputs)
+x = Dense(intermediate_dim, activation='relu')(flattened)
 z_mean = Dense(latent_dim, name='z_mean')(x)
 z_log_var = Dense(latent_dim, name='z_log_var')(x)
 
@@ -51,13 +63,16 @@ if __name__ == '__main__':
 
     xtrain = ImportPatches(partition['train'], **params)
 
-    reconstruction_loss = mse(inputs, outputs)
+    encoder.summary()
+    decoder.summary()
+
+    reconstruction_loss = mse(flattened, outputs)
     reconstruction_loss *= original_dim
-    kl_loss = 1 + z_log_var - K.square(z_mean) - K.exp(z_log_var)
-    kl_loss = K.sum(kl_loss, axis=-1)
-    kl_loss *= -0.5
-    vae_loss = K.mean(reconstruction_loss + kl_loss)
+    elbo = elbo_loss([z_mean, z_log_var])
+
+    vae_loss = reconstruction_loss + elbo
+
     vae.add_loss(vae_loss)
-    vae.compile(optimizer='adam')
+    vae.compile(loss= vae_loss, optimizer='adam')
 
     vae.fit_generator(generator=xtrain, validation_data= xtrain, use_multiprocessing= True, workers= 3)
