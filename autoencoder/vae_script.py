@@ -3,7 +3,6 @@ import numpy as np
 from keras.layers import Lambda, Dense, Input, Flatten
 from keras.models import Model
 from keras.losses import mse
-from keras.utils import plot_model
 from import_patches import ImportPatches
 import glob
 
@@ -12,7 +11,7 @@ path = "D:\patches_S1B_IW_GRDH_20180823\*.tif"
 fls = glob.glob(path)
 len_path = len(fls)
 
-params = {'dim': (128*128, 2),
+params = {'dim': (128,128,2),
           'batch_size': 32,
           'n_classes': 1,
           'shuffle': True}
@@ -37,7 +36,7 @@ def elbo_loss(args):
     return K.mean(kl_loss)
 
 original_dim = 128*128*2
-input_shape = (128*128, 2)
+input_shape = (128,128,2)
 intermediate_dim = 512
 latent_dim = 2
 
@@ -59,20 +58,19 @@ decoder = Model(latent_inputs, outputs, name='decoder')
 outputs = decoder(encoder(inputs)[2])
 vae = Model(inputs, outputs, name='vae_mlp')
 
+encoder.summary()
+decoder.summary()
+
+reconstruction_loss = mse(flattened, outputs)
+reconstruction_loss *= original_dim
+elbo = elbo_loss([z_mean, z_log_var])
+
+vae_loss = reconstruction_loss + elbo
+vae.add_loss(vae_loss)
+
+vae.compile(optimizer='adam')
+
 if __name__ == '__main__':
 
     xtrain = ImportPatches(partition['train'], **params)
-
-    encoder.summary()
-    decoder.summary()
-
-    reconstruction_loss = mse(flattened, outputs)
-    reconstruction_loss *= original_dim
-    elbo = elbo_loss([z_mean, z_log_var])
-
-    vae_loss = reconstruction_loss + elbo
-
-    vae.add_loss(vae_loss)
-    vae.compile(loss= vae_loss, optimizer='adam')
-
-    vae.fit_generator(generator=xtrain, validation_data= xtrain, use_multiprocessing= True, workers= 3)
+    vae.fit_generator(generator=xtrain, use_multiprocessing= True, workers= 3)

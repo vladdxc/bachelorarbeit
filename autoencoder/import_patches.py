@@ -5,7 +5,7 @@ from skimage import io
 
 class ImportPatches(keras.utils.Sequence):
 
-    def __init__(self, path_IDs, batch_size = 32, dim = (128, 128, 128), n_channels = 1,
+    def __init__(self, path_IDs, batch_size = 32, dim = (128, 128, 128), n_channels = None,
                 n_classes = 1, shuffle = True):
 
         self.dim = dim
@@ -37,13 +37,14 @@ class ImportPatches(keras.utils.Sequence):
 
     def __data_generation(self, path_IDs_temp):
 
-        X = np.empty((self.batch_size, *self.dim, self.n_channels))
-
+        X = np.empty((self.batch_size, *self.dim)) #self.n_channels should be part of the parantheses if more channels needed
+        y = np.empty((self.batch_size), dtype= int)
         for i, ID in enumerate(path_IDs_temp):
             ret = io.imread(ID)
             ret = ret.astype(np.float32)
-            ch1 = np.reshape(ret[:,:,1], [np.size(ret[:,:,1], 1)])
-            ch2 = np.reshape(ret[:,:,2], [np.size(ret[:,:,2], 2)])
-            X[i, ] = (ch1, ch2)
+            # ch1 = np.ndarray.flatten(ret[:,:,0])
+            # ch2 = np.ndarray.flatten(ret[:,:,1])
+            X[i,] = ret
 
-        return X
+
+        return X, y
